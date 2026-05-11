@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Radar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">🔭 AI Radar</div>
+    <div class="header-controls">
+      <input type="text" id="search" placeholder="Search all sources…" autocomplete="off">
+      <select id="sort">
+        <option value="growth">↑ Growth</option>
+        <option value="date">📅 Date</option>
+        <option value="popularity">🔥 Popularity</option>
+      </select>
+      <button id="theme-toggle" aria-label="Toggle theme">☀</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="overview" role="tab">Overview</button>
+    <button class="tab" data-tab="github" role="tab">GitHub</button>
+    <button class="tab" data-tab="youtube" role="tab">YouTube</button>
+    <button class="tab" data-tab="hackernews" role="tab">HackerNews</button>
+  </nav>
+
+  <main>
+    <div id="status" class="status" aria-live="polite"></div>
+    <div id="card-grid" class="card-grid"></div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
