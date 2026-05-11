@@ -53,6 +53,14 @@ export function renderCards(grid, items) {
   grid.appendChild(fragment);
 }
 
+export function renderEmptyState(grid, message) {
+  grid.replaceChildren();
+  const empty = document.createElement('div');
+  empty.className = 'empty-state';
+  empty.innerHTML = message;
+  grid.appendChild(empty);
+}
+
 function escHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')

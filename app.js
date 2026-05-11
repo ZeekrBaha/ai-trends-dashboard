@@ -1,5 +1,5 @@
 import { fetchGitHub, fetchHackerNews, mockYouTube, sortItems, filterItems } from './data.js';
-import { renderCards } from './ui.js';
+import { renderCards, renderEmptyState } from './ui.js';
 
 // Restore saved theme preference immediately
 const savedTheme = localStorage.getItem('ai-radar-theme');
@@ -13,6 +13,7 @@ const state = {
   activeTab: 'overview',
   sortKey: 'growth',
   searchQuery: '',
+  githubRateLimited: false,
 };
 
 const grid = document.getElementById('card-grid');
@@ -35,7 +36,23 @@ function getVisibleItems() {
 }
 
 function refresh() {
-  renderCards(grid, getVisibleItems());
+  const visible = getVisibleItems();
+
+  // Show rate-limit message on GitHub tab when no results due to rate limiting
+  if (state.activeTab === 'github' && visible.length === 0 && state.githubRateLimited) {
+    renderEmptyState(grid,
+      '⚠️ GitHub API rate limit reached (10 req/hr for unauthenticated requests).<br>' +
+      'Add a <code>Authorization: Bearer YOUR_TOKEN</code> header in <code>data.js → fetchGitHub()</code> to lift it.<br>' +
+      '<a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Generate a free token →</a>'
+    );
+  } else {
+    renderCards(grid, visible);
+  }
+
+  // Update status bar with per-tab count
+  const tabLabel = state.activeTab === 'overview' ? 'all sources' : state.activeTab;
+  const searchNote = state.searchQuery ? ` matching "${state.searchQuery}"` : '';
+  status.textContent = `${visible.length} items · ${tabLabel}${searchNote} · last updated ${new Date(state.lastUpdated).toLocaleTimeString()}`;
 }
 
 tabs.forEach(tab => {
@@ -79,15 +96,17 @@ async function init() {
   const hnItems = hnResult.status === 'fulfilled' ? hnResult.value : [];
   const ytItems = mockYouTube();
 
-  if (ghResult.status === 'rejected') console.error('GitHub fetch failed:', ghResult.reason);
+  if (ghResult.status === 'rejected') {
+    if (ghResult.reason?.code === 'RATE_LIMITED') {
+      state.githubRateLimited = true;
+    } else {
+      console.error('GitHub fetch failed:', ghResult.reason);
+    }
+  }
   if (hnResult.status === 'rejected') console.error('HN fetch failed:', hnResult.reason);
 
   state.allItems = [...ghItems, ...hnItems, ...ytItems];
-
-  const total = state.allItems.length;
-  const errors = [ghResult, hnResult].filter(r => r.status === 'rejected').length;
-  const errNote = errors ? ` (${errors} source${errors > 1 ? 's' : ''} unavailable)` : '';
-  status.textContent = `${total} items loaded${errNote} · last updated ${new Date().toLocaleTimeString()}`;
+  state.lastUpdated = Date.now();
 
   refresh();
 }
