@@ -121,7 +121,7 @@ export function mockYouTube() {
       source: 'youtube',
       title: v.title,
       description: `by ${v.channel}`,
-      url: '', // placeholder — replace with real video URL when YouTube API key is wired up
+      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(v.title)}`,
       growthValue: weeklyGrowth,
       growthLabel: `📺 +${fmtNum(weeklyGrowth)} views/wk`,
       popularityValue: v.views,

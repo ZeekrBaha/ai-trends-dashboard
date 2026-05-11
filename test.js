@@ -223,12 +223,12 @@ section('mockYouTube');
 
 {
   const items = mockYouTube();
-  const allEmpty = items.every(item => item.url === '');
-  const bad = items.filter(item => item.url !== '');
+  const allValid = items.every(item => item.url.startsWith('https://www.youtube.com/results?search_query='));
+  const bad = items.filter(item => !item.url.startsWith('https://www.youtube.com/results?search_query='));
   assert(
-    'all items have url === "" (YouTube URL placeholder)',
-    allEmpty,
-    `items with non-empty url: ${JSON.stringify(bad.map(i => ({ id: i.id, url: i.url })))}`
+    'all items have YouTube search URL',
+    allValid,
+    `items with invalid url: ${JSON.stringify(bad.map(i => ({ id: i.id, url: i.url })))}`
   );
 }
 
