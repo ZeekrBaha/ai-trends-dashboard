@@ -13,9 +13,10 @@ export function buildCard(item) {
     github: 'GitHub',
     youtube: 'YouTube',
     hackernews: 'HN',
-  }[item.source] ?? item.source;
+  }[item.source] ?? escHtml(String(item.source));
 
-  const daysAgo = Math.round((Date.now() - item.date.getTime()) / (1000 * 60 * 60 * 24));
+  const dateMs = item.date instanceof Date ? item.date.getTime() : Date.parse(item.date ?? 0);
+  const daysAgo = Math.max(0, Math.round((Date.now() - dateMs) / (1000 * 60 * 60 * 24)));
   const dateLabel = daysAgo === 0 ? 'today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
 
   card.innerHTML = `
@@ -64,5 +65,5 @@ function escAttr(str) {
   // Only allow http/https URLs to prevent javascript: injection
   const s = String(str);
   if (!/^https?:\/\//i.test(s)) return '#';
-  return s.replace(/"/g, '%22');
+  return encodeURI(s).replace(/'/g, '%27').replace(/`/g, '%60');
 }
