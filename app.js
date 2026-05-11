@@ -21,6 +21,7 @@ const status = document.getElementById('status');
 const searchInput = document.getElementById('search');
 const sortSelect = document.getElementById('sort');
 const themeToggle = document.getElementById('theme-toggle');
+const refreshBtn = document.getElementById('refresh-btn');
 const tabs = document.querySelectorAll('.tab');
 
 if (savedTheme) themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀';
@@ -82,6 +83,11 @@ themeToggle.addEventListener('click', () => {
   html.dataset.theme = next;
   themeToggle.textContent = next === 'dark' ? '🌙' : '☀';
   localStorage.setItem('ai-radar-theme', next);
+});
+
+refreshBtn.addEventListener('click', () => {
+  refreshBtn.disabled = true;
+  init().finally(() => { refreshBtn.disabled = false; });
 });
 
 async function init() {
