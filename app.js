@@ -1,5 +1,5 @@
 import { fetchGitHub, fetchHackerNews, mockYouTube, sortItems, filterItems } from './data.js';
-import { renderCards, renderEmptyState } from './ui.js';
+import { renderCards, renderEmptyState, renderSkeletons } from './ui.js';
 
 // Restore saved theme preference immediately
 const savedTheme = localStorage.getItem('ai-radar-theme');
@@ -91,7 +91,8 @@ refreshBtn.addEventListener('click', () => {
 });
 
 async function init() {
-  status.textContent = 'Loading data…';
+  status.textContent = 'Loading…';
+  renderSkeletons(grid);
 
   const [ghResult, hnResult] = await Promise.allSettled([
     fetchGitHub(),
