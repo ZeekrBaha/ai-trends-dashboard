@@ -53,12 +53,37 @@ export function renderCards(grid, items) {
   grid.appendChild(fragment);
 }
 
-export function renderEmptyState(grid, message) {
+/**
+ * Render a styled empty-state message with optional links.
+ * Accepts plain text only — links are passed as descriptors and built safely.
+ *
+ * @param {HTMLElement} grid
+ * @param {string} message - plain text message (not HTML)
+ * @param {{ label: string, href: string }[]} [links] - optional action links
+ */
+export function renderEmptyState(grid, message, links = []) {
   grid.replaceChildren();
-  const empty = document.createElement('div');
-  empty.className = 'empty-state';
-  empty.innerHTML = message;
-  grid.appendChild(empty);
+  const el = document.createElement('div');
+  el.className = 'empty-state';
+
+  const msg = document.createElement('p');
+  msg.textContent = message;
+  el.appendChild(msg);
+
+  for (const { label, href } of links) {
+    const safeHref = /^https?:\/\//i.test(href) ? href : '#';
+    const a = document.createElement('a');
+    a.href = safeHref;
+    a.textContent = label;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.color = 'var(--accent)';
+    a.style.display = 'block';
+    a.style.marginTop = '8px';
+    el.appendChild(a);
+  }
+
+  grid.appendChild(el);
 }
 
 export function renderSkeletons(grid, count = 6) {
@@ -79,6 +104,7 @@ export function renderSkeletons(grid, count = 6) {
 }
 
 function escHtml(str) {
+  // Note: ' not escaped — safe for innerHTML/double-quoted attributes; don't use in event handler attrs
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

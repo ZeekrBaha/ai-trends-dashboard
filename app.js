@@ -1,11 +1,10 @@
 import { fetchGitHub, fetchHackerNews, mockYouTube, sortItems, filterItems } from './data.js';
 import { renderCards, renderEmptyState, renderSkeletons } from './ui.js';
 
-// Restore saved theme preference immediately
+// Restore saved theme preference immediately (before DOM refs are set)
 const savedTheme = localStorage.getItem('ai-radar-theme');
 if (savedTheme) {
   document.documentElement.dataset.theme = savedTheme;
-  // themeToggle not yet available here; sync its icon after DOM refs are set
 }
 
 const state = {
@@ -14,6 +13,7 @@ const state = {
   sortKey: 'growth',
   searchQuery: '',
   githubRateLimited: false,
+  lastUpdated: null,
 };
 
 const grid = document.getElementById('card-grid');
@@ -24,7 +24,8 @@ const themeToggle = document.getElementById('theme-toggle');
 const refreshBtn = document.getElementById('refresh-btn');
 const tabs = document.querySelectorAll('.tab');
 
-if (savedTheme) themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀';
+// Sync theme toggle icon with restored theme
+if (savedTheme) themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
 function getVisibleItems() {
   const byTab =
@@ -41,10 +42,10 @@ function refresh() {
 
   // Show rate-limit message on GitHub tab when no results due to rate limiting
   if (state.activeTab === 'github' && visible.length === 0 && state.githubRateLimited) {
-    renderEmptyState(grid,
-      '⚠️ GitHub API rate limit reached (10 req/hr for unauthenticated requests).<br>' +
-      'Add a <code>Authorization: Bearer YOUR_TOKEN</code> header in <code>data.js → fetchGitHub()</code> to lift it.<br>' +
-      '<a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Generate a free token →</a>'
+    renderEmptyState(
+      grid,
+      '⚠️ GitHub API rate limit reached (10 req/hr for unauthenticated requests). Add an Authorization: Bearer YOUR_TOKEN header in data.js → fetchGitHub() to lift it.',
+      [{ label: 'Generate a free token →', href: 'https://github.com/settings/tokens' }]
     );
   } else {
     renderCards(grid, visible);
@@ -53,7 +54,8 @@ function refresh() {
   // Update status bar with per-tab count
   const tabLabel = state.activeTab === 'overview' ? 'all sources' : state.activeTab;
   const searchNote = state.searchQuery ? ` matching "${state.searchQuery}"` : '';
-  status.textContent = `${visible.length} items · ${tabLabel}${searchNote} · last updated ${new Date(state.lastUpdated).toLocaleTimeString()}`;
+  const timeStr = state.lastUpdated ? new Date(state.lastUpdated).toLocaleTimeString() : 'never';
+  status.textContent = `${visible.length} items · ${tabLabel}${searchNote} · last updated ${timeStr}`;
 }
 
 tabs.forEach(tab => {
@@ -81,7 +83,7 @@ themeToggle.addEventListener('click', () => {
   const html = document.documentElement;
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
   html.dataset.theme = next;
-  themeToggle.textContent = next === 'dark' ? '🌙' : '☀';
+  themeToggle.textContent = next === 'dark' ? '🌙' : '☀️';
   localStorage.setItem('ai-radar-theme', next);
 });
 
@@ -91,6 +93,9 @@ refreshBtn.addEventListener('click', () => {
 });
 
 async function init() {
+  // Reset transient flags so a successful retry clears stale state
+  state.githubRateLimited = false;
+
   status.textContent = 'Loading…';
   renderSkeletons(grid);
 

@@ -1,5 +1,5 @@
 import { sortItems, filterItems, mockYouTube } from './data.js';
-import { buildCard, renderCards } from './ui.js';
+import { buildCard, renderCards, renderEmptyState, renderSkeletons } from './ui.js';
 
 // ── Test harness ─────────────────────────────────────────────────────────────
 
@@ -306,6 +306,82 @@ section('renderCards');
     'non-empty array renders correct number of .card elements (3)',
     cards.length === 3,
     `expected 3 .card elements, got ${cards.length}`
+  );
+}
+
+// ── renderEmptyState ──────────────────────────────────────────────────────────
+
+section('renderEmptyState');
+
+{
+  const grid = document.createElement('div');
+  renderEmptyState(grid, 'Nothing here');
+  const el = grid.querySelector('.empty-state');
+  assert(
+    'renders .empty-state element with message text',
+    el !== null && el.textContent.includes('Nothing here'),
+    `grid innerHTML: ${grid.innerHTML.slice(0, 200)}`
+  );
+}
+
+{
+  const grid = document.createElement('div');
+  const xss = '<script>alert(1)</script>';
+  renderEmptyState(grid, xss);
+  assert(
+    'XSS: message with <script> does not inject a real <script> element',
+    grid.querySelector('script') === null,
+    `grid innerHTML: ${grid.innerHTML.slice(0, 200)}`
+  );
+}
+
+{
+  const grid = document.createElement('div');
+  renderEmptyState(grid, 'Rate limited', [
+    { label: 'Get a token', href: 'https://github.com/settings/tokens' },
+  ]);
+  const link = grid.querySelector('a');
+  assert(
+    'renders provided link with correct href',
+    link !== null && link.getAttribute('href') === 'https://github.com/settings/tokens',
+    link === null ? 'no <a> found' : `href was: ${link.getAttribute('href')}`
+  );
+}
+
+{
+  const grid = document.createElement('div');
+  renderEmptyState(grid, 'Safe', [{ label: 'Bad link', href: 'javascript:alert(1)' }]);
+  const link = grid.querySelector('a');
+  assert(
+    'XSS: javascript: href is sanitised to "#"',
+    link !== null && link.getAttribute('href') === '#',
+    link === null ? 'no <a> found' : `href was: ${link.getAttribute('href')}`
+  );
+}
+
+// ── renderSkeletons ───────────────────────────────────────────────────────────
+
+section('renderSkeletons');
+
+{
+  const grid = document.createElement('div');
+  renderSkeletons(grid);
+  const cards = grid.querySelectorAll('.skeleton-card');
+  assert(
+    'renders 6 skeleton cards by default',
+    cards.length === 6,
+    `expected 6, got ${cards.length}`
+  );
+}
+
+{
+  const grid = document.createElement('div');
+  renderSkeletons(grid, 3);
+  const cards = grid.querySelectorAll('.skeleton-card');
+  assert(
+    'respects count argument: 3 skeleton cards',
+    cards.length === 3,
+    `expected 3, got ${cards.length}`
   );
 }
 
