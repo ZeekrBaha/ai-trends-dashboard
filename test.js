@@ -124,13 +124,13 @@ section('filterItems');
     makeItem({ id: 'b', title: 'Gemini Ultra vs GPT', description: 'Benchmark results' }),
     makeItem({ id: 'c', title: 'Claude 3.5 Sonnet', description: 'Anthropic model' }),
   ];
-  const results = filterItems(items, 'gpt');
+  const filtered = filterItems(items, 'gpt');
   assert(
     'matches title case-insensitively: query "gpt" finds 2 items',
-    results.length === 2 &&
-    results.some(i => i.id === 'a') &&
-    results.some(i => i.id === 'b'),
-    `got ${results.length} item(s): ${results.map(i => i.title).join(', ')}`
+    filtered.length === 2 &&
+    filtered.some(i => i.id === 'a') &&
+    filtered.some(i => i.id === 'b'),
+    `got ${filtered.length} item(s): ${filtered.map(i => i.title).join(', ')}`
   );
 }
 
