@@ -34,6 +34,8 @@ tabs.forEach(tab => {
     tabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     state.activeTab = tab.dataset.tab;
+    state.searchQuery = '';
+    searchInput.value = '';
     refresh();
   });
 });
@@ -52,7 +54,7 @@ themeToggle.addEventListener('click', () => {
   const html = document.documentElement;
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
   html.dataset.theme = next;
-  themeToggle.textContent = next === 'dark' ? '☀' : '🌙';
+  themeToggle.textContent = next === 'dark' ? '🌙' : '☀';
 });
 
 async function init() {
@@ -74,9 +76,13 @@ async function init() {
 
   const total = state.allItems.length;
   const errors = [ghResult, hnResult].filter(r => r.status === 'rejected').length;
-  status.textContent = `${total} items loaded${errors ? ` (${errors} source${errors > 1 ? 's' : ''} unavailable)` : ''} · last updated ${new Date().toLocaleTimeString()}`;
+  const errNote = errors ? ` (${errors} source${errors > 1 ? 's' : ''} unavailable)` : '';
+  status.textContent = `${total} items loaded${errNote} · last updated ${new Date().toLocaleTimeString()}`;
 
   refresh();
 }
 
-init();
+init().catch(err => {
+  status.textContent = 'Failed to load. Check console for details.';
+  console.error('AI Radar init failed:', err);
+});
