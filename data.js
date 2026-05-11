@@ -8,7 +8,6 @@ export async function fetchGitHub() {
   const queries = [
     `topic:machine-learning+topic:ai+created:>${since}`,
     `topic:llm+stars:>50+created:>${since}`,
-    `artificial-intelligence+stars:>100+pushed:>${since}`,
   ];
 
   const results = await Promise.allSettled(
@@ -112,7 +111,7 @@ export function mockYouTube() {
       source: 'youtube',
       title: v.title,
       description: `by ${v.channel}`,
-      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(v.title)}`,
+      url: '', // placeholder — replace with real video URL when YouTube API key is wired up
       growthValue: weeklyGrowth,
       growthLabel: `📺 +${fmtNum(weeklyGrowth)} views/wk`,
       popularityValue: v.views,
@@ -129,6 +128,8 @@ export function sortItems(items, sortKey) {
     copy.sort((a, b) => b.date - a.date);
   } else if (sortKey === 'popularity') {
     copy.sort((a, b) => b.popularityValue - a.popularityValue);
+  } else {
+    console.warn(`sortItems: unknown sortKey "${sortKey}"`);
   }
   return copy;
 }
@@ -138,13 +139,13 @@ export function filterItems(items, query) {
   const q = query.toLowerCase();
   return items.filter(
     item =>
-      item.title.toLowerCase().includes(q) ||
-      item.description.toLowerCase().includes(q)
+      (item.title ?? '').toLowerCase().includes(q) ||
+      (item.description ?? '').toLowerCase().includes(q)
   );
 }
 
 function fmtNum(n) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'k';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
   return String(n);
 }
