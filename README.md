@@ -1,35 +1,104 @@
-# AI Trends Dashboard
+# 🔭 AI Trends Dashboard
 
-Single-page dashboard tracking AI trends over the last 7 days from GitHub, HackerNews, and YouTube.
+A single-page dashboard that tracks what's trending in AI right now — pulling live data from GitHub and HackerNews, updated every time you open it.
+
+![Overview — dark mode](docs/screenshots/overview-dark.png)
+
+---
 
 ## Features
 
-- **3 live sources**: GitHub trending AI/ML repos (GitHub Search API), HackerNews top AI stories (Algolia API), mock YouTube AI videos
-- **4 tabs**: Overview (all sources), GitHub, YouTube, HackerNews
-- **Search**: filter across all sources simultaneously
-- **Sort**: by growth rate, date, or popularity
-- **Dark / light theme** toggle
-- **No build step**: open `index.html` directly in a browser
+- **3 live sources** — GitHub trending AI/ML repos, HackerNews top AI stories, mock YouTube videos (real API key optional)
+- **4 tabs** — Overview (all sources combined), GitHub, YouTube, HackerNews
+- **Search** — filter across all sources simultaneously; clears automatically on tab switch
+- **Sort** — by growth rate, date, or popularity
+- **Dark / light theme** — toggle with one click
+- **No build step** — open `index.html` directly in any modern browser
 
-## Run
+---
+
+## Screenshots
+
+### Dark mode — Overview
+
+![Overview dark](docs/screenshots/overview-dark.png)
+
+### Light mode — Overview
+
+![Overview light](docs/screenshots/overview-light.png)
+
+### Search — filtering by keyword
+
+![Search for Claude](docs/screenshots/search-claude.png)
+
+### HackerNews tab — live stories
+
+![HackerNews tab](docs/screenshots/hackernews-tab.png)
+
+### YouTube tab — trending AI videos
+
+![YouTube tab](docs/screenshots/youtube-tab.png)
+
+### Test suite — 18/18 passing
+
+![Tests passing](docs/screenshots/tests-passing.png)
+
+---
+
+## Quick start
 
 ```bash
+# Clone
+git clone https://github.com/ZeekrBaha/ai-trends-dashboard.git
+cd ai-trends-dashboard
+
+# Open directly (works in most browsers)
 open index.html
-# or serve locally:
-npx serve .
+
+# Or serve over HTTP (required for some browsers)
+python3 -m http.server 8080
+# then open http://localhost:8080
 ```
 
-## Test
+## Run tests
 
 ```bash
 open test.html
+# or serve and open http://localhost:8080/test.html
 ```
 
-All 18 tests run in the browser. Results shown inline with pass/fail colours.
+All 18 tests run in the browser. Results are shown inline with colour-coded pass/fail output.
 
-## Add real YouTube data
+---
 
-YouTube currently shows mock data. To wire up real results:
+## Data sources
+
+| Source | API | Auth required | What it shows |
+|---|---|---|---|
+| **GitHub** | [GitHub Search API](https://docs.github.com/en/rest/search) | No (rate-limited) | AI/ML repos created in the last 7 days, sorted by stars |
+| **HackerNews** | [Algolia HN API](https://hn.algolia.com/api) | No | Top AI stories by points from the last 7 days |
+| **YouTube** | Mock data | — | 8 placeholder videos (see below to wire up real data) |
+
+> **GitHub rate limits:** The unauthenticated GitHub Search API allows 10 requests/hour. If the GitHub tab shows no results, you've hit the limit. Add a `GITHUB_TOKEN` to lift it (see below).
+
+---
+
+## Add a GitHub token (optional)
+
+To avoid rate limiting on GitHub:
+
+1. Generate a token at [github.com/settings/tokens](https://github.com/settings/tokens) (no scopes needed for public repos)
+2. In `data.js`, add the header to `fetchGitHub()`:
+
+```js
+{ headers: { Accept: 'application/vnd.github+json', Authorization: 'Bearer YOUR_TOKEN' } }
+```
+
+---
+
+## Add real YouTube data (optional)
+
+YouTube currently shows mock data. To wire up live results:
 
 1. Get a key from [Google Cloud Console → YouTube Data API v3](https://console.cloud.google.com/)
 2. In `data.js`, replace `mockYouTube()` with:
@@ -48,7 +117,7 @@ export async function fetchYouTube(apiKey) {
     title: v.snippet.title,
     description: `by ${v.snippet.channelTitle}`,
     url: `https://www.youtube.com/watch?v=${v.id.videoId}`,
-    growthValue: 0,         // viewCount requires a Statistics request
+    growthValue: 0,
     growthLabel: '📺 trending',
     popularityValue: 0,
     date: new Date(v.snippet.publishedAt),
@@ -58,15 +127,28 @@ export async function fetchYouTube(apiKey) {
 
 3. In `app.js`, call `fetchYouTube(YOUR_KEY)` alongside the other fetches in `init()`.
 
+---
+
 ## File structure
 
 ```
-ai-radar/
-├── index.html    # App shell — header, tabs, search, sort, card grid
-├── style.css     # Dark/light themes via CSS custom properties
-├── app.js        # State management, event wiring
-├── data.js       # Fetch functions and data transformations
-├── ui.js         # Card renderer (XSS-safe)
-├── test.html     # Test runner
-└── test.js       # 18 browser-native unit tests
+ai-trends-dashboard/
+├── index.html          # App shell — header, tabs, search, sort, card grid
+├── style.css           # Dark/light themes via CSS custom properties
+├── app.js              # State management and event wiring
+├── data.js             # Fetch functions and data transformations
+├── ui.js               # XSS-safe card renderer
+├── test.html           # Browser test runner
+├── test.js             # 18 unit tests (no framework)
+└── docs/
+    └── screenshots/    # README screenshots
 ```
+
+---
+
+## Tech stack
+
+- **HTML + CSS + vanilla JS** — no framework, no build step
+- **ES modules** — `import`/`export` throughout
+- **CSS custom properties** — dark/light theme switching with zero JS
+- **`Promise.allSettled`** — one source failing never breaks the rest
