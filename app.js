@@ -1,6 +1,13 @@
 import { fetchGitHub, fetchHackerNews, mockYouTube, sortItems, filterItems } from './data.js';
 import { renderCards } from './ui.js';
 
+// Restore saved theme preference immediately
+const savedTheme = localStorage.getItem('ai-radar-theme');
+if (savedTheme) {
+  document.documentElement.dataset.theme = savedTheme;
+  // themeToggle not yet available here; sync its icon after DOM refs are set
+}
+
 const state = {
   allItems: [],
   activeTab: 'overview',
@@ -14,6 +21,8 @@ const searchInput = document.getElementById('search');
 const sortSelect = document.getElementById('sort');
 const themeToggle = document.getElementById('theme-toggle');
 const tabs = document.querySelectorAll('.tab');
+
+if (savedTheme) themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀';
 
 function getVisibleItems() {
   const byTab =
@@ -55,6 +64,7 @@ themeToggle.addEventListener('click', () => {
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
   html.dataset.theme = next;
   themeToggle.textContent = next === 'dark' ? '🌙' : '☀';
+  localStorage.setItem('ai-radar-theme', next);
 });
 
 async function init() {
