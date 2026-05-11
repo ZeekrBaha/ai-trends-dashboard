@@ -1,11 +1,19 @@
 import { fetchGitHub, fetchHackerNews, mockYouTube, sortItems, filterItems } from './data.js';
-import { renderCards } from './ui.js';
+import { renderCards, renderEmptyState, renderSkeletons } from './ui.js';
+
+// Restore saved theme preference immediately
+const savedTheme = localStorage.getItem('ai-radar-theme');
+if (savedTheme) {
+  document.documentElement.dataset.theme = savedTheme;
+  // themeToggle not yet available here; sync its icon after DOM refs are set
+}
 
 const state = {
   allItems: [],
   activeTab: 'overview',
   sortKey: 'growth',
   searchQuery: '',
+  githubRateLimited: false,
 };
 
 const grid = document.getElementById('card-grid');
@@ -13,7 +21,10 @@ const status = document.getElementById('status');
 const searchInput = document.getElementById('search');
 const sortSelect = document.getElementById('sort');
 const themeToggle = document.getElementById('theme-toggle');
+const refreshBtn = document.getElementById('refresh-btn');
 const tabs = document.querySelectorAll('.tab');
+
+if (savedTheme) themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀';
 
 function getVisibleItems() {
   const byTab =
@@ -26,7 +37,23 @@ function getVisibleItems() {
 }
 
 function refresh() {
-  renderCards(grid, getVisibleItems());
+  const visible = getVisibleItems();
+
+  // Show rate-limit message on GitHub tab when no results due to rate limiting
+  if (state.activeTab === 'github' && visible.length === 0 && state.githubRateLimited) {
+    renderEmptyState(grid,
+      '⚠️ GitHub API rate limit reached (10 req/hr for unauthenticated requests).<br>' +
+      'Add a <code>Authorization: Bearer YOUR_TOKEN</code> header in <code>data.js → fetchGitHub()</code> to lift it.<br>' +
+      '<a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Generate a free token →</a>'
+    );
+  } else {
+    renderCards(grid, visible);
+  }
+
+  // Update status bar with per-tab count
+  const tabLabel = state.activeTab === 'overview' ? 'all sources' : state.activeTab;
+  const searchNote = state.searchQuery ? ` matching "${state.searchQuery}"` : '';
+  status.textContent = `${visible.length} items · ${tabLabel}${searchNote} · last updated ${new Date(state.lastUpdated).toLocaleTimeString()}`;
 }
 
 tabs.forEach(tab => {
@@ -55,10 +82,17 @@ themeToggle.addEventListener('click', () => {
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
   html.dataset.theme = next;
   themeToggle.textContent = next === 'dark' ? '🌙' : '☀';
+  localStorage.setItem('ai-radar-theme', next);
+});
+
+refreshBtn.addEventListener('click', () => {
+  refreshBtn.disabled = true;
+  init().finally(() => { refreshBtn.disabled = false; });
 });
 
 async function init() {
-  status.textContent = 'Loading data…';
+  status.textContent = 'Loading…';
+  renderSkeletons(grid);
 
   const [ghResult, hnResult] = await Promise.allSettled([
     fetchGitHub(),
@@ -69,15 +103,17 @@ async function init() {
   const hnItems = hnResult.status === 'fulfilled' ? hnResult.value : [];
   const ytItems = mockYouTube();
 
-  if (ghResult.status === 'rejected') console.error('GitHub fetch failed:', ghResult.reason);
+  if (ghResult.status === 'rejected') {
+    if (ghResult.reason?.code === 'RATE_LIMITED') {
+      state.githubRateLimited = true;
+    } else {
+      console.error('GitHub fetch failed:', ghResult.reason);
+    }
+  }
   if (hnResult.status === 'rejected') console.error('HN fetch failed:', hnResult.reason);
 
   state.allItems = [...ghItems, ...hnItems, ...ytItems];
-
-  const total = state.allItems.length;
-  const errors = [ghResult, hnResult].filter(r => r.status === 'rejected').length;
-  const errNote = errors ? ` (${errors} source${errors > 1 ? 's' : ''} unavailable)` : '';
-  status.textContent = `${total} items loaded${errNote} · last updated ${new Date().toLocaleTimeString()}`;
+  state.lastUpdated = Date.now();
 
   refresh();
 }

@@ -53,6 +53,31 @@ export function renderCards(grid, items) {
   grid.appendChild(fragment);
 }
 
+export function renderEmptyState(grid, message) {
+  grid.replaceChildren();
+  const empty = document.createElement('div');
+  empty.className = 'empty-state';
+  empty.innerHTML = message;
+  grid.appendChild(empty);
+}
+
+export function renderSkeletons(grid, count = 6) {
+  grid.replaceChildren();
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const card = document.createElement('div');
+    card.className = 'skeleton-card';
+    card.innerHTML = `
+      <div class="skeleton-line" style="height:16px;width:60%"></div>
+      <div class="skeleton-line" style="height:12px;width:90%"></div>
+      <div class="skeleton-line" style="height:12px;width:75%"></div>
+      <div class="skeleton-line" style="height:12px;width:40%"></div>
+    `;
+    fragment.appendChild(card);
+  }
+  grid.appendChild(fragment);
+}
+
 function escHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')

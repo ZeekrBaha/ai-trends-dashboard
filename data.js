@@ -16,11 +16,21 @@ export async function fetchGitHub() {
         `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=10`,
         { headers: { Accept: 'application/vnd.github+json' } }
       ).then(r => {
+        if (r.status === 403 || r.status === 429) throw new Error('RATE_LIMITED');
         if (!r.ok) throw new Error(`GitHub API ${r.status}`);
         return r.json();
       })
     )
   );
+
+  const allRateLimited = results.every(
+    r => r.status === 'rejected' && r.reason?.message === 'RATE_LIMITED'
+  );
+  if (allRateLimited) {
+    const err = new Error('GitHub API rate limit reached. Add a GITHUB_TOKEN to lift it.');
+    err.code = 'RATE_LIMITED';
+    throw err;
+  }
 
   const seen = new Set();
   const items = [];
@@ -38,7 +48,7 @@ export async function fetchGitHub() {
         description: repo.description ?? '',
         url: repo.html_url,
         growthValue: repo.stargazers_count,
-        growthLabel: `⭐ ${fmtNum(repo.stargazers_count)} stars`,
+        growthLabel: `⭐ ${fmtNum(repo.stargazers_count)} total stars`,
         popularityValue: repo.stargazers_count,
         date: new Date(repo.pushed_at ?? repo.created_at),
       });
@@ -111,7 +121,7 @@ export function mockYouTube() {
       source: 'youtube',
       title: v.title,
       description: `by ${v.channel}`,
-      url: '', // placeholder — replace with real video URL when YouTube API key is wired up
+      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(v.title)}`,
       growthValue: weeklyGrowth,
       growthLabel: `📺 +${fmtNum(weeklyGrowth)} views/wk`,
       popularityValue: v.views,

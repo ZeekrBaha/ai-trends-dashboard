@@ -223,12 +223,12 @@ section('mockYouTube');
 
 {
   const items = mockYouTube();
-  const allEmpty = items.every(item => item.url === '');
-  const bad = items.filter(item => item.url !== '');
+  const allValid = items.every(item => item.url.startsWith('https://www.youtube.com/results?search_query='));
+  const bad = items.filter(item => !item.url.startsWith('https://www.youtube.com/results?search_query='));
   assert(
-    'all items have url === "" (YouTube URL placeholder)',
-    allEmpty,
-    `items with non-empty url: ${JSON.stringify(bad.map(i => ({ id: i.id, url: i.url })))}`
+    'all items have YouTube search URL',
+    allValid,
+    `items with invalid url: ${JSON.stringify(bad.map(i => ({ id: i.id, url: i.url })))}`
   );
 }
 
@@ -247,10 +247,13 @@ section('buildCard — XSS safety');
 
 {
   const card = buildCard(makeItem({ description: '<img src=x onerror=alert(1)>' }));
+  // escHtml converts < to &lt;, so the img tag must not appear as a real tag.
+  // The word "onerror" will still be present as escaped text — that is correct.
+  // The dangerous case is an unescaped <img tag in the DOM, not the word "onerror".
   assert(
-    'escapes onerror in description: "onerror" not present in innerHTML',
-    !card.innerHTML.includes('onerror'),
-    `innerHTML contained onerror:\n${card.innerHTML.slice(0, 200)}`
+    'escapes onerror in description: <img tag not injected as real element',
+    card.querySelector('img') === null && !card.innerHTML.includes('<img'),
+    `found real <img> or unescaped tag:\n${card.innerHTML.slice(0, 200)}`
   );
 }
 

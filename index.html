@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Radar</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔭</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,10 +13,11 @@
     <div class="header-controls">
       <input type="text" id="search" placeholder="Search all sources…" autocomplete="off">
       <select id="sort">
-        <option value="growth">↑ Growth</option>
+        <option value="growth">↑ Stars / Points</option>
         <option value="date">📅 Date</option>
         <option value="popularity">🔥 Popularity</option>
       </select>
+      <button id="refresh-btn" aria-label="Refresh data">↻</button>
       <button id="theme-toggle" aria-label="Toggle theme">☀</button>
     </div>
   </header>
